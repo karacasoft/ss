@@ -73,19 +73,19 @@ public:
     /* 8000A330 */ u16 *getStoryFlagsMut();
     /* 8000A360 */ const u16 *getStoryFlagsConst() const;
     /* 8000A3B0 */ u16 *getItemFlagsMut();
-    /* 8000A3E0 */ u16 *getItemFlagsConst();
+    /* 8000A3E0 */ const u16 *getItemFlagsConst();
     /* 8000A430 */ u16 *getDungeonFlagsMut();
-    /* 8000A460 */ u16 *getDungeonFlagsConst();
+    /* 8000A460 */ const u16 *getDungeonFlagsConst();
     /* 8000A4B0 */ u16 *getSceneFlagsMut();
-    /* 8000A4E0 */ u16 *getSceneFlagsConst();
+    /* 8000A4E0 */ const u16 *getSceneFlagsConst();
     /* 8000A530 */ u16 *getTBoxFlagsMut();
-    /* 8000A560 */ u16 *getTBoxFlagsConst();
+    /* 8000A560 */ const u16 *getTBoxFlagsConst();
     /* 8000A5B0 */ u16 *getTempFlagsMut();
-    /* 8000A5E0 */ u16 *getTempFlagsConst();
+    /* 8000A5E0 */ const u16 *getTempFlagsConst();
     /* 8000A630 */ u16 *getZoneFlagsMut();
-    /* 8000A660 */ u16 *getZoneFlagsConst();
+    /* 8000A660 */ const u16 *getZoneFlagsConst();
     /* 8000A6B0 */ u16 *getEnemyDefeatFlagsMut();
-    /* 8000A6E0 */ u16 *getEnemyDefeatFlagsConst();
+    /* 8000A6E0 */ const u16 *getEnemyDefeatFlagsConst();
 
     /* 8000A730 */ void setStoryFlags(u16 *flags, u32 offset, u16 count);
     /* 8000A790 */ void setItemFlags(u16 *flags, u32 offset, u16 count);

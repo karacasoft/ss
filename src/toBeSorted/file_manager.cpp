@@ -31,18 +31,22 @@ extern "C" {
 /* 80009DA0 */ void fn_80009DA0(void *ptr) {
     memset(ptr, 0, 0x20);
 } // memset(param_1, 0, 0x20) a 0x24 structure is implied here (0x20 data) a crc is at 0x24
+/* 80015C00 */ unsigned long fn_80015C00(void *unk);
+/* 80015BF0 */ const void *fn_80015BF0(void *unk);
+/* 800BD580 */ bool fn_800BD580(void *out, char *name, void *saveFile, u32 flags);
 }
 
 /* 80009DB0 */ FileManager::FileManager() {
     // TODO the assembly code looks really wild
-    mHeroNames[0][0] = '\0';
-    u32 num_files = (u32)(mHeroName - mHeroNames[0]);
-    num_files = num_files / sizeof(mHeroName);
-    for (int i = 1; mHeroNames[i] < mHeroName && i < num_files; i++) {
-        mHeroNames[i][0] = '\0';
+
+    wchar_t *heroNameP = mHeroNames[0];
+    for(*heroNameP = '\0'; heroNameP < mHeroName; heroNameP += 9) {
+        *heroNameP = '\0';
     }
+
     mHeroName[0] = '\0';
     mCurrentArea[0] = '\0';
+
     sInstance = this;
     // TODO these should probably use the new operators?
     mpSavedSaveFiles = (SavedSaveFiles *)mHeap::g_gameHeaps[0]->alloc(sizeof(SavedSaveFiles), 0x20);
@@ -55,13 +59,46 @@ extern "C" {
 /* 80009EF0 */ FileManager *FileManager::create(EGG::Heap *heap) {
     return new (heap, 0x04) FileManager();
 }
-/* 80009F30 */ bool FileManager::loadSaveData(void *out, char *name, bool isSkipData) {}
-/* 80009F70 */ void FileManager::saveSaveData(void *unk, bool isSkipData) {}
+/* 80009F30 */ bool FileManager::loadSaveData(void *out, char *name, bool isSkipData) {
+    if(isSkipData == true) {
+        return fn_800BD580(out, name, this->mpSkipData, 0x80);
+    } else {
+        return fn_800BD580(out, name, this->mpSavedSaveFiles, 0x10000-0x420);
+    }
+}
+/* 80009F70 */ void FileManager::saveSaveData(void *unk, bool isSkipData) {
+    if(isSkipData == true) {
+        unsigned long r31 = fn_80015C00(unk);
+
+        const void *res = fn_80015BF0(unk);
+        SkipData *field = this->mpSkipData;
+
+        memcpy((void *)field, res, r31);
+
+        
+    } else {
+        unsigned long r31 = fn_80015C00(unk);
+
+        const void *res = fn_80015BF0(unk);
+        SavedSaveFiles *field = this->mpSavedSaveFiles;
+
+        memcpy((void *)field, res, r31);
+    }
+    
+}
 /* 8000A000 */ void FileManager::refreshSaveFileData() {}
-/* 8000A260 */ wchar_t *FileManager::getFileHeroname(int fileNum) {}
-/* 8000A280 */ s64 FileManager::getFileSaveTime(int fileNum) {}
-/* 8000A2A0 */ s16 FileManager::getFileCurrentHealth(int fileNum) {}
-/* 8000A2C0 */ s16 FileManager::getFileHealthCapacity(int fileNum) {}
+/* 8000A260 */ wchar_t *FileManager::getFileHeroname(int fileNum) {
+    return this->mHeroNames[fileNum];
+}
+/* 8000A280 */ s64 FileManager::getFileSaveTime(int fileNum) {
+  return this->mPlayTime[fileNum];
+}
+/* 8000A2A0 */ s16 FileManager::getFileCurrentHealth(int fileNum) {
+  return this->mCurrentHealth[fileNum];
+}
+/* 8000A2C0 */ s16 FileManager::getFileHealthCapacity(int fileNum) {
+  return this->mCurrentHealthCapacity[fileNum];
+}
 /* 8000A2E0 */ void FileManager::fn_8000A2E0() {
     // maybe call this function "reset"
     mIsFileUnk1[0] = true;
@@ -77,20 +114,55 @@ u16 *FileManager::getStoryFlagsMut() {
 /* 8000A360 */ const u16 *FileManager::getStoryFlagsConst() const {
     return getCurrentFile()->getStoryFlags1();
 }
-/* 8000A3B0 */ u16 *FileManager::getItemFlagsMut() {}
-/* 8000A3E0 */ u16 *FileManager::getItemFlagsConst() {}
-/* 8000A430 */ u16 *FileManager::getDungeonFlagsMut() {}
-/* 8000A460 */ u16 *FileManager::getDungeonFlagsConst() {}
-/* 8000A4B0 */ u16 *FileManager::getSceneFlagsMut() {}
-/* 8000A4E0 */ u16 *FileManager::getSceneFlagsConst() {}
-/* 8000A530 */ u16 *FileManager::getTBoxFlagsMut() {}
-/* 8000A560 */ u16 *FileManager::getTBoxFlagsConst() {}
-/* 8000A5B0 */ u16 *FileManager::getTempFlagsMut() {}
-/* 8000A5E0 */ u16 *FileManager::getTempFlagsConst() {}
-/* 8000A630 */ u16 *FileManager::getZoneFlagsMut() {}
-/* 8000A660 */ u16 *FileManager::getZoneFlagsConst() {}
-/* 8000A6B0 */ u16 *FileManager::getEnemyDefeatFlagsMut() {}
-/* 8000A6E0 */ u16 *FileManager::getEnemyDefeatFlagsConst() {}
+/* 8000A3B0 */ u16 *FileManager::getItemFlagsMut() {
+    return getCurrentFile()->getItemFlags0();
+}
+/* 8000A3E0 */ const u16 *FileManager::getItemFlagsConst() {
+    SaveFile *file = isFileInactive() ? &mFileB : &mFileA;
+    return (const u16 *)file->getItemFlags1();
+}
+/* 8000A430 */ u16 *FileManager::getDungeonFlagsMut() {
+    return getCurrentFile()->getDungeonFlags0();
+}
+/* 8000A460 */ const u16 *FileManager::getDungeonFlagsConst() {
+    SaveFile *file = isFileInactive() ? &mFileB : &mFileA;
+    return (const u16 *)file->getDungeonFlags1();
+}
+/* 8000A4B0 */ u16 *FileManager::getSceneFlagsMut() {
+    return getCurrentFile()->getSceneFlags0();
+}
+/* 8000A4E0 */ const u16 *FileManager::getSceneFlagsConst() {
+    SaveFile *file = isFileInactive() ? &mFileB : &mFileA;
+    return (const u16 *)file->getSceneFlags1();
+}
+/* 8000A530 */ u16 *FileManager::getTBoxFlagsMut() {
+    return getCurrentFile()->getTboxFlags0();
+}
+/* 8000A560 */ const u16 *FileManager::getTBoxFlagsConst() {
+    SaveFile *file = isFileInactive() ? &mFileB : &mFileA;
+    return (const u16 *)file->getTboxFlags1();
+}
+/* 8000A5B0 */ u16 *FileManager::getTempFlagsMut() {
+    return getCurrentFile()->getTempFlags0();
+}
+/* 8000A5E0 */ const u16 *FileManager::getTempFlagsConst() {
+    SaveFile *file = isFileInactive() ? &mFileB : &mFileA;
+    return (const u16 *)file->getTempFlags1();
+}
+/* 8000A630 */ u16 *FileManager::getZoneFlagsMut() {
+    return getCurrentFile()->getZoneFlags0();
+}
+/* 8000A660 */ const u16 *FileManager::getZoneFlagsConst() {
+    SaveFile *file = isFileInactive() ? &mFileB : &mFileA;
+    return (const u16 *)file->getZoneFlags1();
+}
+/* 8000A6B0 */ u16 *FileManager::getEnemyDefeatFlagsMut() {
+    return getCurrentFile()->getEnemyFlags0();
+}
+/* 8000A6E0 */ const u16 *FileManager::getEnemyDefeatFlagsConst() {
+    SaveFile *file = isFileInactive() ? &mFileB : &mFileA;
+    return (const u16 *)file->getEnemyFlags1();
+}
 /* 8000A730 */ void FileManager::setStoryFlags(u16 *flags, u32 offset, u16 count) {}
 /* 8000A790 */ void FileManager::setItemFlags(u16 *flags, u32 offset, u16 count) {}
 /* 8000A7F0 */ void FileManager::setDungeonFlags(u16 *flags, u32 offset, u16 count) {}
